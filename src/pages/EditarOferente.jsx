@@ -20,19 +20,50 @@ function EditarOferente() {
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isOferente, setIsOferente] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
   const diasSemana = [
     'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'
   ];
 
   useEffect(() => {
-    fetchOferente();
+    initializeComponent();
   }, [id]);
 
-  const fetchOferente = async () => {
+  const initializeComponent = async () => {
+    try {
+      // Get current user from localStorage
+      const userData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      setCurrentUser(userData);
+      
+      if (userData && userData.rol === 'oferente') {
+        setIsOferente(true);
+      }
+      
+      // Fetch the oferente data
+      await fetchOferente(userData);
+    } catch (err) {
+      setError('Error al inicializar el componente');
+      console.error('Init error:', err);
+    }
+  };
+
+  const fetchOferente = async (userData) => {
     try {
       setFetching(true);
       const oferente = await oferentesAPI.getById(id);
+      
+      // Authorization check: if user is oferente, verify they own this profile
+      if (userData && userData.rol === 'oferente') {
+        if (oferente.id_usuario !== userData.id_usuario) {
+          setIsAuthorized(false);
+          setError('No tienes permiso para editar este oferente');
+          setFetching(false);
+          return;
+        }
+      }
       
       // Extraer datos del horario_disponibilidad JSON
       const horario = oferente.horario_disponibilidad || {};
@@ -145,6 +176,43 @@ function EditarOferente() {
     }
   };
 
+  // Show unauthorized message if user doesn't have permission
+  if (!isAuthorized) {
+    return (
+      <div className="crear-oferente-container">
+        <div className="crear-oferente-card">
+          <div className="oferente-header">
+            <button 
+              onClick={() => navigate('/oferentes')} 
+              className="back-button"
+              aria-label="Volver"
+            >
+              ← Volver
+            </button>
+            <h2>Acceso Denegado</h2>
+          </div>
+          
+          <div className="alert alert-error">
+            <span className="alert-icon">🚫</span>
+            <div>
+              <strong>No tienes permiso para editar este oferente</strong>
+              <p>Solo puedes editar tu propio perfil de oferente.</p>
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button 
+              onClick={() => navigate('/oferentes')}
+              className="btn btn-primary"
+            >
+              Volver a Mis Oferentes
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (fetching) {
     return (
       <div className="crear-oferente-container">
@@ -166,11 +234,23 @@ function EditarOferente() {
           >
             ← Volver
           </button>
-          <h2>Editar Oferente</h2>
-          <p className="subtitle">Actualiza la información del oferente</p>
+          <h2>{isOferente ? 'Editar Mi Perfil' : 'Editar Oferente'}</h2>
+          <p className="subtitle">
+            {isOferente 
+              ? 'Actualiza la información de tu negocio'
+              : 'Actualiza la información del oferente'
+            }
+          </p>
         </div>
 
-        {error && (
+        {error && !isAuthorized && (
+          <div className="alert alert-error">
+            <span className="alert-icon">⚠️</span>
+            <span>{error}</span>
+          </div>
+        )}
+
+        {error && isAuthorized && (
           <div className="alert alert-error">
             <span className="alert-icon">⚠️</span>
             <span>{error}</span>

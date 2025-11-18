@@ -1,250 +1,217 @@
-// src/components/Productos.js
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { productosAPI, categoriasAPI } from '../services/api';
-import '../styles/Productos.css';
+// src/components/Productos.jsx
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { productosAPI } from "../services/api";
+import Layout from "../components/Layout";
+import "../styles/Usuarios.css";
 
 function Productos() {
-  const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
-  const [categorias, setCategorias] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [filtro, setFiltro] = useState('todos');               // todos | disponible | agotado
-  const [filtroCategoria, setFiltroCategoria] = useState('todas');
-  const [busqueda, setBusqueda] = useState('');
-  const [showCategorias, setShowCategorias] = useState(false);
+  const [filterCategoria, setFilterCategoria] = useState("");
+  const [categorias, setCategorias] = useState([]);
+  const [error, setError] = useState("");
 
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const isAdmin = user?.rol === "admin";
+  const isOferente = user?.rol === "oferente";
 
-  // -----------------------------------------------------------------
-  // FETCH
-  // -----------------------------------------------------------------
   useEffect(() => {
-    fetchData();
+    loadProductos();
   }, []);
 
-  const fetchData = async () => {
+  const loadProductos = async () => {
     try {
       setLoading(true);
-      const [prodRes, catRes] = await Promise.all([
-        // 1. Public list (only available products)
-        productosAPI.getAll(),
-        // 2. All categories (for the dropdown)
-        categoriasAPI.getAll()
-      ]);
+      const res = await productosAPI.getAll();
 
-      // The backend returns: { success: true, productos: [...] }
-      setProductos(prodRes.productos || []);
-      setCategorias(catRes.categorias || []);   // adjust if your categoria endpoint returns differently
+      let data = res.productos;
+
+      if (isOferente && user?.oferenteId) {
+        data = data.filter((p) => p.id_oferente === user.oferenteId);
+      }
+
+      setProductos(data);
+      setFiltered(data);
+      setCategorias(res.categorias);
     } catch (err) {
-      setError(err.message || 'Error al cargar datos');
+      setError(err.message || "Error al cargar productos");
     } finally {
       setLoading(false);
     }
   };
 
-  // -----------------------------------------------------------------
-  // DELETE (soft-delete → esta_disponible = 0)
-  // -----------------------------------------------------------------
-  const handleDeleteProducto = async (id, nombre) => {
-    if (!window.confirm(`¿Eliminar "${nombre}"?`)) return;
+  const applyFilters = () => {
+    let data = [...productos];
+    if (filterCategoria) {
+      data = data.filter((p) => p.id_categoria === parseInt(filterCategoria));
+    }
+    setFiltered(data);
+  };
 
+  useEffect(applyFilters, [filterCategoria, productos]);
+
+  const clearFilters = () => setFilterCategoria("");
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Eliminar producto?")) return;
     try {
       await productosAPI.delete(id);
-      alert('Producto eliminado');
-      fetchData();                 // refresh list
+      loadProductos();
     } catch (err) {
-      alert(err.message || 'Error al eliminar');
+      alert(err.message || "Error al eliminar");
     }
   };
 
-  const handleDeleteCategoria = async (id, nombre) => {
-    if (!window.confirm(`¿Eliminar categoría "${nombre}"?`)) return;
-
-    try {
-      await categoriasAPI.delete(id);
-      alert('Categoría eliminada');
-      fetchData();
-    } catch (err) {
-      alert(err.message || 'Error al eliminar categoría');
-    }
-  };
-
-  // -----------------------------------------------------------------
-  // FILTER LOGIC (unchanged, just use the new field names)
-  // -----------------------------------------------------------------
-  const productosFiltrados = productos.filter(p => {
-    const matchFiltro = filtro === 'todos' ||
-      (filtro === 'disponible' && p.esta_disponible) ||
-      (filtro === 'agotado' && p.inventario === 0);
-
-    const matchCategoria = filtroCategoria === 'todas' || p.id_categoria == filtroCategoria;
-
-    const matchBusqueda = p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      p.nombre_negocio?.toLowerCase().includes(busqueda.toLowerCase());
-
-    return matchFiltro && matchCategoria && matchBusqueda;
-  });
-
-  const formatPrice = (price) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(price);
-
-  // -----------------------------------------------------------------
-  // RENDER (only tiny field-name tweaks)
-  // -----------------------------------------------------------------
-  if (loading) return <div className="loading"><div className="spinner"></div><p>Cargando…</p></div>;
+  if (loading) {
+    return (
+      <Layout>
+        <div className="usuarios-container">
+          <div className="loading">Cargando productos...</div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
-    <div className="productos-container">
-      {/* … header unchanged … */}
+    <Layout>
+      <div className="usuarios-container">
 
-      {!showCategorias ? (
-        /* ---------- PRODUCTOS VIEW ---------- */
-        <div className="productos-content">
-          {/* stats – now use the fields returned by the new backend */}
-          <div className="productos-stats">
-            <div className="stat-card"><div className="stat-icon">Total</div><div className="stat-value">{productos.length}</div><div className="stat-label">Total Productos</div></div>
-            <div className="stat-card"><div className="stat-icon">Disponibles</div><div className="stat-value">{productos.filter(p => p.esta_disponible).length}</div><div className="stat-label">Disponibles</div></div>
-            <div className="stat-card"><div className="stat-icon">Gastronómicos</div><div className="stat-value">{productos.filter(p => p.categoria_tipo === 'gastronomica').length}</div><div className="stat-label">Gastronómicos</div></div>
-            <div className="stat-card"><div className="stat-icon">Artesanales</div><div className="stat-value">{productos.filter(p => p.categoria_tipo === 'artesanal').length}</div><div className="stat-label">Artesanales</div></div>
+        {/* HEADER */}
+        <header className="usuarios-header">
+          <div className="header-content">
+            <div>
+              <h1>Productos</h1>
+              <p className="welcome-text">
+                {isOferente ? "Mis productos" : "Gestión de productos"}
+              </p>
+            </div>
+
+            <div className="header-actions">
+              {(isAdmin || isOferente) && (
+                <Link to="/productos/crear" className="btn btn-primary">
+                  + Nuevo Producto
+                </Link>
+              )}
+            </div>
           </div>
+        </header>
 
-          {/* filtros … unchanged … */}
+        {error && <div className="error-message">{error}</div>}
 
-          <div className="productos-table-container">
-            {productosFiltrados.length === 0 ? (
-              <div className="empty-state"><p>No se encontraron productos</p></div>
-            ) : (
-              <table className="productos-table">
-                <thead>
-                  <tr>
-                    <th>ID</th><th>Imagen</th><th>Nombre</th><th>Categoría</th><th>Precio</th>
-                    <th>Inventario</th><th>Oferente</th><th>Estado</th><th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productosFiltrados.map(p => (
-                    <tr key={p.id_producto}>
-                      <td>{p.id_producto}</td>
-                      <td className="producto-imagen">
-                        {p.imagen && p.imagen.length ? <img src={p.imagen[0]} alt={p.nombre} /> : <div className="no-imagen">No image</div>}
-                      </td>
-                      <td className="producto-nombre"><strong>{p.nombre}</strong><small>{p.descripcion?.substring(0,50)}…</small></td>
-                      <td><span className={`badge badge-${p.categoria_tipo}`}>{p.categoria_nombre || '—'}</span></td>
-                      <td className="precio">{formatPrice(p.precio)}</td>
-                      <td className={`inventario ${p.inventario===0?'agotado':''}`}>{p.inventario} uds</td>
-                      <td>{p.nombre_negocio}</td>
-                      <td>{p.esta_disponible ? <span className="estado disponible">Disponible</span> : <span className="estado no-disponible">No disponible</span>}</td>
-                      <td className="actions">
-                        <Link to={`/productos/editar/${p.id_producto}`} className="btn-action btn-edit">Edit</Link>
-                        <button onClick={() => handleDeleteProducto(p.id_producto, p.nombre)} className="btn-action btn-delete">Delete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* STATS */}
+        <div className="usuarios-stats">
+          <div className="stat-card">
+            <div className="stat-value">{productos.length}</div>
+            <div className="stat-label">Total</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">
+              {productos.filter((p) => p.estatus === 1).length}
+            </div>
+            <div className="stat-label">Activos</div>
+          </div>
+        </div>
+
+        {/* FILTERS */}
+        <div className="filters-section">
+          <div className="filters-row">
+            <div className="filter-group">
+              <label>Categoría:</label>
+              <select
+                value={filterCategoria}
+                onChange={(e) => setFilterCategoria(e.target.value)}
+              >
+                <option value="">Todas</option>
+                {categorias.map((c) => (
+                  <option key={c.id_categoria} value={c.id_categoria}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {filterCategoria && (
+              <button className="btn btn-secondary btn-sm" onClick={clearFilters}>
+                Limpiar
+              </button>
             )}
           </div>
+
+          <div className="results-count">
+            Mostrando {filtered.length} de {productos.length}
+          </div>
         </div>
-      ) : (
-        // Vista de Categorías
-        <div className="categorias-content">
-          <div className="categorias-header">
-            <h2>🏷️ Gestión de Categorías</h2>
-            <Link to="/categorias/crear" className="btn btn-primary">
-              + Nueva Categoría
-            </Link>
-          </div>
 
-          {/* Estadísticas de Categorías */}
-          <div className="productos-stats">
-            <div className="stat-card">
-              <div className="stat-icon">🏷️</div>
-              <div className="stat-value">{categorias.length}</div>
-              <div className="stat-label">Total Categorías</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">🍽️</div>
-              <div className="stat-value">
-                {categorias.filter(c => c.tipo === 'gastronomica').length}
-              </div>
-              <div className="stat-label">Gastronómicas</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">🎨</div>
-              <div className="stat-value">
-                {categorias.filter(c => c.tipo === 'artesanal').length}
-              </div>
-              <div className="stat-label">Artesanales</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">📦</div>
-              <div className="stat-value">
-                {categorias.reduce((acc, cat) => acc + (cat.total_productos || 0), 0)}
-              </div>
-              <div className="stat-label">Productos Totales</div>
-            </div>
-          </div>
+        {/* TABLE */}
+        <div className="usuarios-table-container">
+          <table className="usuarios-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Inventario</th>
+                <th>Imágenes</th>
+                <th>Estatus</th>
+                {isAdmin && <th>Oferente</th>}
+                <th>Acciones</th>
+              </tr>
+            </thead>
 
-          {/* Tabla de Categorías */}
-          <div className="productos-table-container">
-            <table className="productos-table">
-              <thead>
+            <tbody>
+              {filtered.length === 0 ? (
                 <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Tipo</th>
-                  <th>Productos</th>
-                  <th>Acciones</th>
+                  <td colSpan="9">No hay productos</td>
                 </tr>
-              </thead>
-              <tbody>
-                {categorias.map((categoria) => {
-                  const productosEnCategoria = productos.filter(p => p.id_categoria === categoria.id_categoria).length;
-                  return (
-                    <tr key={categoria.id_categoria}>
-                      <td>{categoria.id_categoria}</td>
-                      <td>
-                        <strong>{categoria.nombre}</strong>
-                      </td>
-                      <td>
-                        <span className={`badge badge-${categoria.tipo}`}>
-                          {categoria.tipo === 'gastronomica' ? '🍽️ Gastronómica' : '🎨 Artesanal'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="inventario">
-                          {productosEnCategoria} productos
-                        </span>
-                      </td>
-                      <td className="actions">
-                        <div className="action-buttons">
-                          <Link
-                            to={`/categorias/editar/${categoria.id_categoria}`}
-                            className="btn-action btn-edit"
-                            title="Editar"
-                          >
-                            ✏️
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteCategoria(categoria.id_categoria, categoria.nombre)}
-                            className="btn-action btn-delete"
-                            title="Eliminar"
-                            disabled={productosEnCategoria > 0}
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              ) : (
+                filtered.map((p) => (
+                  <tr key={p.id_producto}>
+                    <td>{p.id_producto}</td>
+
+                    <td>
+                      <strong>{p.nombre}</strong>
+                    </td>
+
+                    <td>
+                      {categorias.find((c) => c.id_categoria === p.id_categoria)?.nombre ||
+                        "N/A"}
+                    </td>
+
+                    <td>${p.precio}</td>
+                    <td>{p.inventario}</td>
+
+                    <td>{Array.isArray(p.imagenes) ? p.imagenes.length : 0}</td>
+
+                    <td>
+                      <span className={`badge ${p.estatus ? "badge-success" : "badge-danger"}`}>
+                        {p.estatus ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+
+                    {isAdmin && <td>{p.id_oferente}</td>}
+
+                    <td className="actions">
+                      <Link to={`/productos/editar/${p.id_producto}`} className="btn-action btn-edit">
+                        ✏️
+                      </Link>
+
+                      <button onClick={() => handleDelete(p.id_producto)} className="btn-action btn-delete">
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+
+          </table>
         </div>
-      )}
-    </div>
+
+      </div>
+    </Layout>
   );
 }
 

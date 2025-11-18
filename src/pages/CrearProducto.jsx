@@ -1,7 +1,7 @@
 /// src/components/CrearProducto.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { productosAPI, categoriasAPI, oferentesAPI } from '../services/api';
+import { productosAPI, oferentesAPI } from '../services/api';
 import '../styles/CrearProducto.css';
 
 function CrearProducto() {
@@ -15,8 +15,8 @@ function CrearProducto() {
     inventario: 0,
     id_categoria: '',
     id_oferente: '',
-    imagen: [],          // <-- backend expects "imagen"
-    esta_disponible: true
+    imagenes: [],
+    esta_disponible: true,
   });
 
   const [categorias, setCategorias] = useState([]);
@@ -27,50 +27,71 @@ function CrearProducto() {
   const [imagenInput, setimagenInput] = useState('');
 
   // ---------------------------------------------------------------
-  // INITIAL DATA
-  // ---------------------------------------------------------------
-  useEffect(() => {
-    (async () => {
-      try {
-        const [catRes, ofeRes] = await Promise.all([
-          categoriasAPI.getAll(),
-          oferentesAPI.getAll()
-        ]);
-        setCategorias(catRes.categorias || []);
-        setOferentes(ofeRes.oferentes || []);
+// INITIAL DATA
+// ---------------------------------------------------------------
+useEffect(() => {
+  (async () => {
+    try {
+      const [catRes, ofeRes] = await Promise.all([
+        productosAPI.getCategorias(),
+        oferentesAPI.getAll() // ✅ Only approved oferentes
+      ]);
 
-        // Pre-select the logged-in oferente
-        if (currentUser?.rol === 'oferente' && currentUser?.id_oferente) {
-          setFormData(p => ({ ...p, id_oferente: currentUser.id_oferente }));
+      setCategorias(catRes.categorias || []);
+      setOferentes(ofeRes.oferentes || []);
+
+      // ✅ If user is oferente, find their oferente record by id_usuario
+      if (currentUser?.rol === 'oferente' && currentUser?.id_usuario) {
+        const miOferente = (ofeRes.oferentes || []).find(
+          o => o.id_usuario === currentUser.id_usuario
+        );
+        
+        if (miOferente) {
+          setFormData(p => ({ ...p, id_oferente: miOferente.id_oferente }));
         }
-      } catch (e) {
-        setError('Error al cargar datos iniciales');
       }
-    })();
-  }, []);
+    } catch (e) {
+      console.error(e);
+      setError('Error al cargar datos iniciales');
+    }
+  })();
+}, []);
 
   // ---------------------------------------------------------------
   // HANDLERS
   // ---------------------------------------------------------------
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(p => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
     fieldErrors[name] && setFieldErrors(p => ({ ...p, [name]: '' }));
   };
 
   const handleimagenChange = e => {
-    setimagenInput(e.target.value);
-    const urls = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
-    setFormData(p => ({ ...p, imagen: urls }));
+    const value = e.target.value;
+    setimagenInput(value);
+
+    const urls = value
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    // ✓ actualizar correctamente "imagenes" (antes decía "imagen")
+    setFormData(p => ({ ...p, imagenes: urls }));
   };
 
   const validate = () => {
     const err = {};
-    if (!formData.nombre.trim() || formData.nombre.length < 3) err.nombre = 'Nombre ≥ 3 caracteres';
-    if (!formData.precio || formData.precio <= 0) err.precio = 'Precio > 0';
-    if (formData.inventario < 0) err.inventario = 'Inventario ≥ 0';
-    if (!formData.id_categoria) err.id_categoria = 'Selecciona categoría';
-    if (!formData.id_oferente) err.id_oferente = 'Selecciona oferente';
+    if (!formData.nombre.trim() || formData.nombre.length < 3)
+      err.nombre = 'Nombre ≥ 3 caracteres';
+    if (!formData.precio || formData.precio <= 0)
+      err.precio = 'Precio > 0';
+    if (formData.inventario < 0)
+      err.inventario = 'Inventario ≥ 0';
+    if (!formData.id_categoria)
+      err.id_categoria = 'Selecciona categoría';
+    if (!formData.id_oferente)
+      err.id_oferente = 'Selecciona oferente';
+
     setFieldErrors(err);
     return Object.keys(err).length === 0;
   };
@@ -80,12 +101,14 @@ function CrearProducto() {
     if (!validate()) return setError('Corrige los errores');
 
     setLoading(true);
+
     try {
       await productosAPI.create({
         ...formData,
         precio: parseFloat(formData.precio),
-        inventario: parseInt(formData.inventario)
+        inventario: parseInt(formData.inventario),
       });
+
       alert('Producto creado');
       navigate('/productos');
     } catch (er) {
@@ -95,12 +118,15 @@ function CrearProducto() {
     }
   };
 
+  // ---------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------
   return (
     <div className="crear-producto-container">
       <div className="crear-producto-card">
         <div className="producto-header">
-          <button 
-            onClick={() => navigate('/productos')} 
+          <button
+            onClick={() => navigate('/productos')}
             className="back-button"
             aria-label="Volver"
           >
@@ -121,7 +147,7 @@ function CrearProducto() {
           {/* Información Básica */}
           <div className="form-section">
             <h3 className="section-title">📋 Información Básica</h3>
-            
+
             <div className="form-group">
               <label htmlFor="nombre">
                 Nombre del Producto <span className="required">*</span>
@@ -132,7 +158,6 @@ function CrearProducto() {
                 name="nombre"
                 value={formData.nombre}
                 onChange={handleChange}
-                placeholder="Ej: Tacos de Pastor"
                 className={fieldErrors.nombre ? 'error' : ''}
                 required
               />
@@ -148,73 +173,55 @@ function CrearProducto() {
                 name="descripcion"
                 value={formData.descripcion}
                 onChange={handleChange}
-                placeholder="Describe el producto, ingredientes, características especiales..."
                 rows="4"
                 maxLength="500"
               />
-              <span className="char-count">
-                {formData.descripcion.length}/500 caracteres
-              </span>
             </div>
           </div>
 
           {/* Precio e Inventario */}
           <div className="form-section">
             <h3 className="section-title">💰 Precio e Inventario</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="precio">
-                  Precio (MXN) <span className="required">*</span>
-                </label>
+                <label htmlFor="precio">Precio (MXN) *</label>
                 <input
                   type="number"
                   id="precio"
                   name="precio"
                   value={formData.precio}
                   onChange={handleChange}
-                  placeholder="0.00"
-                  step="0.01"
                   min="0"
+                  step="0.01"
                   className={fieldErrors.precio ? 'error' : ''}
                   required
                 />
-                {fieldErrors.precio && (
-                  <span className="field-error">{fieldErrors.precio}</span>
-                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="inventario">
-                  Inventario Inicial <span className="required">*</span>
-                </label>
+                <label htmlFor="inventario">Inventario *</label>
                 <input
                   type="number"
                   id="inventario"
                   name="inventario"
                   value={formData.inventario}
                   onChange={handleChange}
-                  placeholder="0"
                   min="0"
                   className={fieldErrors.inventario ? 'error' : ''}
                   required
                 />
-                {fieldErrors.inventario && (
-                  <span className="field-error">{fieldErrors.inventario}</span>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Categorización */}
+          {/* Categorías */}
           <div className="form-section">
             <h3 className="section-title">🏷️ Categorización</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="id_categoria">
-                  Categoría <span className="required">*</span>
-                </label>
+                <label htmlFor="id_categoria">Categoría *</label>
                 <select
                   id="id_categoria"
                   name="id_categoria"
@@ -224,40 +231,32 @@ function CrearProducto() {
                   required
                 >
                   <option value="">Selecciona una categoría</option>
-                  {categorias.map(categoria => (
-                    <option key={categoria.id_categoria} value={categoria.id_categoria}>
-                      {categoria.nombre} ({categoria.tipo})
+                  {categorias.map(c => (
+                    <option key={c.id_categoria} value={c.id_categoria}>
+                      {c.nombre} ({c.tipo})
                     </option>
                   ))}
                 </select>
-                {fieldErrors.id_categoria && (
-                  <span className="field-error">{fieldErrors.id_categoria}</span>
-                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="id_oferente">
-                  Oferente <span className="required">*</span>
-                </label>
+                <label htmlFor="id_oferente">Oferente *</label>
                 <select
                   id="id_oferente"
                   name="id_oferente"
                   value={formData.id_oferente}
                   onChange={handleChange}
-                  className={fieldErrors.id_oferente ? 'error' : ''}
                   disabled={currentUser?.rol === 'oferente'}
+                  className={fieldErrors.id_oferente ? 'error' : ''}
                   required
                 >
                   <option value="">Selecciona un oferente</option>
-                  {oferentes.map(oferente => (
-                    <option key={oferente.id_oferente} value={oferente.id_oferente}>
-                      {oferente.nombre_negocio} - {oferente.tipo}
+                  {oferentes.map(o => (
+                    <option key={o.id_oferente} value={o.id_oferente}>
+                      {o.nombre_negocio} - {o.tipo}
                     </option>
                   ))}
                 </select>
-                {fieldErrors.id_oferente && (
-                  <span className="field-error">{fieldErrors.id_oferente}</span>
-                )}
               </div>
             </div>
           </div>
@@ -265,85 +264,65 @@ function CrearProducto() {
           {/* Imágenes */}
           <div className="form-section">
             <h3 className="section-title">🖼️ Imágenes</h3>
-            
+
             <div className="form-group">
-              <label htmlFor="imagen">URLs de Imágenes</label>
+              <label>URLs de Imágenes</label>
               <textarea
-                id="imagen"
-                name="imagen"
                 value={imagenInput}
                 onChange={handleimagenChange}
-                placeholder="Ingresa las URLs de las imágenes separadas por comas&#10;Ej: https://ejemplo.com/imagen1.jpg, https://ejemplo.com/imagen2.jpg"
+                placeholder="URLs separadas por comas"
                 rows="3"
               />
-              <span className="form-hint">
-                Separa múltiples URLs con comas. Las imágenes deben estar alojadas en línea.
-              </span>
-              
-              {formData.imagen && formData.imagen.length > 0 && (
-  <div className="image-preview">
-    <p className="preview-title">Vista previa:</p>
-    <div className="preview-grid">
-      {formData.imagen.map((url, index) => (
-        <div key={index} className="preview-item">
-          <img
-            src={url}
-            alt={`Imagen ${index + 1}`}
-            onError={(e) => {
-              e.target.src = '/images/placeholder.png';
-              e.target.alt = 'Error al cargar imagen';
-            }}
-          />
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+
+              {/* ✓ Preview corregido: formData.imagenes */}
+              {formData.imagenes.length > 0 && (
+                <div className="image-preview">
+                  <p className="preview-title">Vista previa:</p>
+                  <div className="preview-grid">
+                    {formData.imagenes.map((url, i) => (
+                      <div key={i} className="preview-item">
+                        <img
+                          src={url}
+                          alt={`Img ${i + 1}`}
+                          onError={(e) => {
+                            e.target.src = '/images/placeholder.png';
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Disponibilidad */}
           <div className="form-section">
             <h3 className="section-title">⚙️ Configuración</h3>
-            
-            <div className="form-group">
-              <div className="checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    name="esta_disponible"
-                    checked={formData.esta_disponible}
-                    onChange={handleChange}
-                  />
-                  <span>Producto disponible para venta</span>
-                </label>
-              </div>
-            </div>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                name="esta_disponible"
+                checked={formData.esta_disponible}
+                onChange={handleChange}
+              />
+              Disponible para venta
+            </label>
           </div>
 
-          {/* Botones de Acción */}
+          {/* Botones */}
           <div className="form-actions">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => navigate('/productos')}
               className="btn btn-secondary"
               disabled={loading}
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="btn btn-primary"
-            >
-              {loading ? (
-                <>
-                  <span className="spinner"></span>
-                  Creando...
-                </>
-              ) : (
-                '✓ Crear Producto'
-              )}
+
+            <button type="submit" disabled={loading} className="btn btn-primary">
+              {loading ? 'Creando...' : '✓ Crear Producto'}
             </button>
           </div>
         </form>

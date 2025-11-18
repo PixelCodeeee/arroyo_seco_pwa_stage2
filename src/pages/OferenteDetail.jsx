@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
-import { oferentesAPI } from "../services/api";
+import { oferentesAPI, productosAPI } from "../services/api";
+import { addToCart, replaceCartWithNewOferente, isProductInCart, getProductQuantity } from "../utils/cartUtils";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import ReservaModal from "../components/ReservaModal";
+import CartConfirmModal from "../components/CartConfirmModal";
 import "../styles/OferenteDetail.css";
 
 function OferenteDetail() {
@@ -14,6 +17,14 @@ function OferenteDetail() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isReservaModalOpen, setIsReservaModalOpen] = useState(false);
+  
+  // Cart confirmation modal state
+  const [isCartConfirmOpen, setIsCartConfirmOpen] = useState(false);
+  const [pendingProduct, setPendingProduct] = useState(null);
+  const [cartConflictData, setCartConflictData] = useState(null);
+
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 
   useEffect(() => {
     fetchOferenteData();
@@ -23,32 +34,17 @@ function OferenteDetail() {
     try {
       setLoading(true);
       
-      // Obtener datos del oferente
       const oferenteData = await oferentesAPI.getById(id);
       console.log("Oferente data:", oferenteData);
       setOferente(oferenteData);
       
-      // Obtener productos del oferente - con mejor manejo de errores
       try {
-        const response = await fetch(`http://localhost:5000/api/productos/oferente/${id}`);
-        
-        // Si la respuesta no es OK (404, 500, etc)
-        if (!response.ok) {
-          console.warn(`Productos endpoint devolvió ${response.status}`);
-          setProductos([]); // Dejar productos vacío
-        } else {
-          const productosData = await response.json();
-          console.log("Productos data:", productosData);
-          
-          if (productosData.success && productosData.productos) {
-            setProductos(productosData.productos);
-          } else {
-            setProductos([]);
-          }
-        }
+        const productosRes = await productosAPI.getByOferenteId(id);
+        console.log("Productos data:", productosRes);
+        setProductos(productosRes.productos || []);
       } catch (prodError) {
         console.error("Error fetching productos:", prodError);
-        setProductos([]); // Continuar sin productos
+        setProductos([]);
       }
       
       setError("");
@@ -58,6 +54,66 @@ function OferenteDetail() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddToCart = (producto) => {
+    if (!oferente) return;
+
+    try {
+      const result = addToCart(producto, oferente);
+
+      if (result.success) {
+        // Successfully added
+        alert(result.message);
+      } else if (result.requiresConfirmation) {
+        // Different oferente - show confirmation modal
+        setPendingProduct(producto);
+        setCartConflictData({
+          currentOferente: result.currentOferente,
+          newOferente: result.newOferente
+        });
+        setIsCartConfirmOpen(true);
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Error al agregar al carrito: ' + error.message);
+    }
+  };
+
+  const handleConfirmCartReplace = () => {
+    if (pendingProduct && oferente) {
+      try {
+        const result = replaceCartWithNewOferente(pendingProduct, oferente);
+        if (result.success) {
+          alert(result.message);
+        }
+      } catch (error) {
+        console.error('Error replacing cart:', error);
+        alert('Error al actualizar el carrito');
+      }
+    }
+    setIsCartConfirmOpen(false);
+    setPendingProduct(null);
+    setCartConflictData(null);
+  };
+
+  const handleCancelCartReplace = () => {
+    setIsCartConfirmOpen(false);
+    setPendingProduct(null);
+    setCartConflictData(null);
+  };
+
+  const handleReservaClick = () => {
+    if (!currentUser) {
+      alert('Debes iniciar sesión para hacer una reserva');
+      navigate('/login');
+      return;
+    }
+    setIsReservaModalOpen(true);
+  };
+
+  const handleReservaSuccess = () => {
+    console.log('Reserva creada exitosamente');
   };
 
   const handlePrevImage = () => {
@@ -77,12 +133,10 @@ function OferenteDetail() {
   const getImagenes = () => {
     if (!oferente) return ["/images/placeholder.png"];
     
-    // Si hay imagen del oferente, usarla
     if (oferente.imagen) {
       return [oferente.imagen];
     }
     
-    // Placeholder según tipo
     return [oferente.tipo === "restaurante" ? "/images/taco.png" : "/images/artesania1.png"];
   };
 
@@ -151,7 +205,9 @@ function OferenteDetail() {
           </p>
           <div className="restaurant-actions">
             {oferente.tipo === "restaurante" && (
-              <button className="btn-primary">Reservar</button>
+              <button className="btn-primary" onClick={handleReservaClick}>
+                Reservar
+              </button>
             )}
             <button className="btn-secondary">Más detalles</button>
           </div>
@@ -202,18 +258,12 @@ function OferenteDetail() {
           <h2>{oferente.tipo === "restaurante" ? "Menú" : "Catálogo"}</h2>
           <div className="menu-grid">
             {productos.map((producto) => {
-              // Parsear imágenes si es JSON string
               let productImagenes = [];
               try {
                 if (typeof producto.imagenes === 'string') {
                   productImagenes = JSON.parse(producto.imagenes);
                 } else if (Array.isArray(producto.imagenes)) {
                   productImagenes = producto.imagenes;
-                } else if (producto.imagen) {
-                  // Soporte para campo "imagen" singular
-                  productImagenes = Array.isArray(producto.imagen) 
-                    ? producto.imagen 
-                    : [producto.imagen];
                 }
               } catch (e) {
                 console.error('Error parsing product images:', e);
@@ -221,11 +271,12 @@ function OferenteDetail() {
               }
               
               const primeraImagen = productImagenes[0] || "/images/placeholder.png";
-
-              // Asegurar que precio es un número
               const precio = typeof producto.precio === 'number' 
                 ? producto.precio 
                 : parseFloat(producto.precio) || 0;
+
+              const inCart = isProductInCart(producto.id_producto);
+              const quantity = getProductQuantity(producto.id_producto);
 
               return (
                 <div key={producto.id_producto} className="menu-item">
@@ -234,7 +285,12 @@ function OferenteDetail() {
                     <p>{producto.descripcion || "Producto disponible"}</p>
                     <div className="menu-item-footer">
                       <span className="price">${precio.toFixed(2)}</span>
-                      <button className="btn-add">Añadir</button>
+                      <button 
+                        className={`btn-add ${inCart ? 'in-cart' : ''}`}
+                        onClick={() => handleAddToCart(producto)}
+                      >
+                        {inCart ? `En carrito (${quantity})` : 'Añadir'}
+                      </button>
                     </div>
                   </div>
                   <div className="menu-item-image">
@@ -301,6 +357,23 @@ function OferenteDetail() {
           <img src="/images/map.png" alt="Ubicación" />
         </div>
       </section>
+
+      {/* Reserva Modal */}
+      <ReservaModal
+        oferente={oferente}
+        isOpen={isReservaModalOpen}
+        onClose={() => setIsReservaModalOpen(false)}
+        onSuccess={handleReservaSuccess}
+      />
+
+      {/* Cart Confirmation Modal */}
+      <CartConfirmModal
+        isOpen={isCartConfirmOpen}
+        onClose={handleCancelCartReplace}
+        onConfirm={handleConfirmCartReplace}
+        currentOferente={cartConflictData?.currentOferente}
+        newOferente={cartConflictData?.newOferente}
+      />
 
       <Footer />
     </div>

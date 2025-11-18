@@ -53,8 +53,8 @@ function Navbar() {
           </Link>
         )}
 
-        {user?.rol === "administrador" && (
-          <Link to="/admin" className="nav-role-btn">
+        {user?.rol === "admin" && (
+          <Link to="/panel-admin" className="nav-role-btn">
             Panel Admin
           </Link>
         )}

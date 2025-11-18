@@ -165,69 +165,51 @@ export const oferentesAPI = {
    SERVICIOS API
 ====================================================== */
 export const serviciosAPI = {
-  create: (servicioData) =>
+  // POST /api/servicios
+  create: (data) =>
     apiRequest('/servicios', {
       method: 'POST',
-      body: JSON.stringify(servicioData),
+      body: JSON.stringify(data),
     }),
 
+  // GET /api/servicios → devuelve { servicios: [], stats: {} }
   getAll: () =>
-    apiRequest('/servicios', {
-      method: 'GET',
-    }),
+    apiRequest('/servicios'),
 
+  // GET /api/servicios/:id
   getById: (id) =>
-    apiRequest(`/servicios/${id}`, {
-      method: 'GET',
-    }),
+    apiRequest(`/servicios/${id}`),
 
+  // GET /api/servicios/oferente/:oferenteId
   getByOferenteId: (oferenteId) =>
-    apiRequest(`/servicios/oferente/${oferenteId}`, {
-      method: 'GET',
-    }),
+    apiRequest(`/servicios/oferente/${oferenteId}`),
 
-  update: (id, servicioData) =>
+  // PUT /api/servicios/:id
+  update: (id, data) =>
     apiRequest(`/servicios/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(servicioData),
+      body: JSON.stringify(data),
     }),
 
+  // DELETE /api/servicios/:id
   delete: (id) =>
-    apiRequest(`/servicios/${id}`, {
-      method: 'DELETE',
-    }),
+    apiRequest(`/servicios/${id}`, { method: 'DELETE' }),
 };
-
 // ---------------------------------------------------------------------
 // PRODUCTOS
 // ---------------------------------------------------------------------
 export const productosAPI = {
-  // PUBLIC
-  getAll: () => request('/productos'),                     // GET  /api/productos
-  getById: (id) => request(`/productos/detalle/${id}`),    // GET  /api/productos/detalle/:id
-  getByTipo: (tipo) => request(`/productos/categoria/${tipo}`),
-
-  // OFERENTE (protected – the middleware adds the token)
-  getMis: () => request('/productos/mis-productos'),       // GET  /api/productos/mis-productos
-  create: (body) => request('/productos/crear', { method: 'POST', body: JSON.stringify(body) }),
-  update: (id, body) => request(`/productos/actualizar/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-  delete: (id) => request(`/productos/eliminar/${id}`, { method: 'DELETE' }),
-  updateInventario: (id, { cantidad }) => request(`/productos/inventario/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ cantidad })
-  }),
-  checkStock: (id, qty = 1) => request(`/productos/stock/${id}?cantidad=${qty}`)
-};
-
-// ---------------------------------------------------------------------
-// CATEGORIAS (admin only – you already have a categoriasAPI, just keep the same shape)
-// ---------------------------------------------------------------------
-export const categoriasAPI = {
-  getAll: () => request('/categorias'),                     // GET  /api/categorias
-  getById: (id) => request(`/categorias/${id}`),
-  create: (body) => request('/categorias', { method: 'POST', body: JSON.stringify(body) }),
-  update: (id, body) => request(`/categorias/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-  delete: (id) => request(`/categorias/${id}`, { method: 'DELETE' })
+  getByOferenteId: (oferenteId) => 
+    apiRequest(`/productos/oferente/${oferenteId}`),
+  getAll: () => apiRequest('/productos'),
+  getMis: () => apiRequest('/productos/mis-productos'),
+  create: (data) => apiRequest('/productos', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => apiRequest(`/productos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`/productos/${id}`, { method: 'DELETE' }),
+  getCategorias: (tipo) => apiRequest('/productos/categorias'),
+  crearCategoria: (data) => apiRequest('/productos/categorias', { method: 'POST', body: JSON.stringify(data) }),
+  actualizarCategoria: (id, data) => apiRequest(`/productos/categorias/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  eliminarCategoria: (id) => apiRequest(`/productos/categorias/${id}`, { method: 'DELETE' }),
 };
 
 /* ======================================================
@@ -265,6 +247,72 @@ export const ordenesAPI = {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     }),
+};
+
+/* ======================================================
+   RESERVAS API
+====================================================== */
+export const reservasAPI = {
+  create: (reservaData) =>
+    apiRequest('/reservas', {
+      method: 'POST',
+      body: JSON.stringify(reservaData),
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
+
+  getMisReservas: () =>
+    apiRequest('/reservas/mis-reservas', {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
+
+  getById: (id) =>
+    apiRequest(`/reservas/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
+
+  updateEstado: (id, estado, notas = '') =>
+    apiRequest(`/reservas/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado, notas }),
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
+
+  delete: (id) =>
+    apiRequest(`/reservas/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
+};
+
+/* ======================================================
+   PAYPAL API
+====================================================== */
+export const paypalAPI = {
+  createOrder: (orderData) =>
+    apiRequest('/paypal/create-order', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    }),
+
+  captureOrder: (captureData) =>
+    apiRequest('/paypal/capture-order', {
+      method: 'POST',
+      body: JSON.stringify(captureData),
+      // No Authorization header for testing
+    }),
+
+  getOrderDetails: (orderID) =>
+    apiRequest(`/paypal/orders/${orderID}`),
 };
 
 export default usuariosAPI;

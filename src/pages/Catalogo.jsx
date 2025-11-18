@@ -112,7 +112,7 @@ function Catalogo() {
             alt={oferente.nombre_negocio}
             onError={(e) => {
               e.target.src = oferente.tipo === "restaurante" 
-                ? "/images/taco.png" 
+                ? "/images/tesoro.jpg" 
                 : "/images/artesania1.png";
             }}
           />

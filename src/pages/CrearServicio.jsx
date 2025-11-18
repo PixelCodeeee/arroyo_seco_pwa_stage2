@@ -11,7 +11,8 @@ function CrearServicio() {
     descripcion: '',
     rango_precio: '',
     capacidad: '',
-    esta_disponible: true
+    estatus: true,
+    imagenes: [] // array de strings (URLs)
   });
   const [oferentes, setOferentes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -23,12 +24,10 @@ function CrearServicio() {
 
   const fetchOferentes = async () => {
     try {
-      const response = await oferentesAPI.getAll();
-      // Filter only oferentes tipo 'restaurante'
-      const restaurantes = response.oferentes.filter(o => o.tipo === 'restaurante');
-      setOferentes(restaurantes);
+      const res = await oferentesAPI.getAll({ tipo: 'restaurante' });
+      setOferentes(res.oferentes || res); // depende de cómo devuelvas
     } catch (err) {
-      console.error('Error fetching oferentes:', err);
+      setError('No se pudieron cargar los restaurantes');
     }
   };
 
@@ -46,19 +45,22 @@ function CrearServicio() {
     setLoading(true);
 
     try {
-      // 
-      const dataToSend = {
-        ...formData,
-        capacidad: formData.capacidad ? parseInt(formData.capacidad) : null,
-        rango_precio: formData.rango_precio || null,
-        descripcion: formData.descripcion || null
-      };
+const dataToSend = {
+  id_oferente: parseInt(formData.id_oferente),
+  nombre: formData.nombre.trim(),
+  descripcion: formData.descripcion.trim() || null,
+  rango_precio: formData.rango_precio.trim() || null,
+  capacidad: formData.capacidad ? parseInt(formData.capacidad) : null,
+  estatus: formData.estatus ? 1 : 0,
+  imagenes: formData.imagenes.length > 0 ? formData.imagenes : null  // ← null en vez de []
+};
 
       await serviciosAPI.create(dataToSend);
       alert('Servicio creado exitosamente');
       navigate('/servicios');
     } catch (err) {
-      setError(err.message || 'Error al crear servicio');
+      const msg = err?.response?.data?.error || err.message || 'Error desconocido';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -68,110 +70,106 @@ function CrearServicio() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h2>Crear Servicio</h2>
-          <p>Registra un nuevo servicio de restaurante</p>
+          <h2>Crear Servicio de Restaurante</h2>
         </div>
 
-        {error && (
-          <div className="error-banner">
-            {error}
-          </div>
-        )}
+        {error && <div className="error-banner">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
+
           <div className="form-group">
-            <label htmlFor="id_oferente">Restaurante *</label>
-            <select
-              id="id_oferente"
-              name="id_oferente"
-              value={formData.id_oferente}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecciona un restaurante</option>
-              {oferentes.map(oferente => (
-                <option key={oferente.id_oferente} value={oferente.id_oferente}>
-                  {oferente.nombre_negocio}
+            <label>Restaurante *</label>
+            <select name="id_oferente" value={formData.id_oferente} onChange={handleChange} required>
+              <option value="">Seleccionar restaurante</option>
+              {oferentes.map(o => (
+                <option key={o.id_oferente} value={o.id_oferente}>
+                  {o.nombre_negocio}
                 </option>
               ))}
             </select>
           </div>
 
           <div className="form-group">
-            <label htmlFor="nombre">Nombre del Servicio *</label>
+            <label>Nombre del Servicio *</label>
             <input
               type="text"
-              id="nombre"
               name="nombre"
               value={formData.nombre}
               onChange={handleChange}
-              placeholder="Ej: Comida Buffet, Desayuno Especial"
               required
+              placeholder="Ej: Buffet Libre"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="descripcion">Descripción</label>
+            <label>Descripción</label>
             <textarea
-              id="descripcion"
               name="descripcion"
               value={formData.descripcion}
               onChange={handleChange}
-              placeholder="Describe el servicio que ofreces"
-              rows="4"
+              rows="3"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="rango_precio">Rango de Precio</label>
+            <label>Rango de Precio</label>
             <input
               type="text"
-              id="rango_precio"
               name="rango_precio"
               value={formData.rango_precio}
               onChange={handleChange}
-              placeholder="Ej: $200-$500"
+              placeholder="Ej: $300 - $800"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="capacidad">Capacidad (personas)</label>
+            <label>Capacidad (personas)</label>
             <input
               type="number"
-              id="capacidad"
               name="capacidad"
               value={formData.capacidad}
               onChange={handleChange}
-              placeholder="Ej: 50"
-              min="0"
+              min="1"
+              placeholder="50"
             />
           </div>
 
           <div className="form-group">
-            <label className="checkbox-label">
+            <label>
               <input
                 type="checkbox"
-                name="esta_disponible"
-                checked={formData.esta_disponible}
+                name="estatus"
+                checked={formData.estatus}
                 onChange={handleChange}
-              />
-              <span>Servicio disponible</span>
+              /> Servicio disponible
             </label>
           </div>
 
+          {/* Imágenes (URLs) */}
+          <div className="form-group">
+            <label>Imágenes (URLs separadas por coma)</label>
+            <textarea
+              placeholder="https://ejemplo.com/img1.jpg, https://ejemplo.com/img2.jpg"
+              onChange={(e) => {
+                const urls = e.target.value.split(',').map(u => u.trim()).filter(Boolean);
+                setFormData(prev => ({ ...prev, imagenes: urls }));
+              }}
+              rows="2"
+            />
+            {formData.imagenes.length > 0 && (
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {formData.imagenes.map((url, i) => (
+                  <img key={i} src={url} alt="preview" style={{ width: 80, height: 80, objectFit: 'cover' }} />
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="form-actions">
-            <button 
-              type="button" 
-              onClick={() => navigate('/servicios')}
-              className="btn-secondary"
-            >
+            <button type="button" onClick={() => navigate('/servicios')} className="btn-secondary">
               Cancelar
             </button>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="btn-primary"
-            >
+            <button type="submit" disabled={loading} className="btn-primary">
               {loading ? 'Creando...' : 'Crear Servicio'}
             </button>
           </div>

@@ -1,89 +1,73 @@
-// src/components/CrearCategoria.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { categoriasAPI } from '../services/api';
-import '../styles/Categorias.css';
+import { productosAPI } from '../services/api';
+import '../styles/CrearProducto.css';
 
 function CrearCategoria() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     nombre: '',
-    tipo: ''
+    tipo: '',
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Limpiar error del campo cuando el usuario escribe
+    setFormData(p => ({ ...p, [name]: value }));
+
     if (fieldErrors[name]) {
-      setFieldErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setFieldErrors(p => ({ ...p, [name]: '' }));
     }
   };
 
-  const validateForm = () => {
-    const errors = {};
+  const validate = () => {
+    const err = {};
 
-    if (!formData.nombre.trim()) {
-      errors.nombre = 'El nombre de la categoría es requerido';
-    } else if (formData.nombre.length < 3) {
-      errors.nombre = 'El nombre debe tener al menos 3 caracteres';
-    }
+    if (!formData.nombre.trim() || formData.nombre.length < 3)
+      err.nombre = 'Nombre ≥ 3 caracteres';
 
-    if (!formData.tipo) {
-      errors.tipo = 'Debes seleccionar un tipo de categoría';
-    }
+    if (!formData.tipo)
+      err.tipo = 'Selecciona un tipo';
 
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    setFieldErrors(err);
+    return Object.keys(err).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    if (!validateForm()) {
-      setError('Por favor corrige los errores en el formulario');
-      return;
-    }
+    if (!validate()) return setError('Corrige los errores');
 
     setLoading(true);
 
     try {
-      await categoriasAPI.create(formData);
-      alert('✅ Categoría creada exitosamente');
-      navigate('/productos');
+      await productosAPI.crearCategoria({
+        nombre: formData.nombre,
+        tipo: formData.tipo,
+      });
+
+      alert('Categoría creada');
+      navigate('/categorias');
     } catch (err) {
-      setError(err.message || 'Error al crear categoría. Por favor intenta nuevamente.');
-      console.error('Error creating categoría:', err);
+      console.error(err);
+      setError(err.message || 'Error al crear categoría');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="categoria-form-container">
-      <div className="categoria-form-card">
-        <div className="form-header">
-          <button 
-            onClick={() => navigate('/productos')} 
-            className="back-button"
-            aria-label="Volver"
-          >
+    <div className="crear-producto-container">
+      <div className="crear-producto-card">
+        <div className="producto-header">
+          <button onClick={() => navigate('/categorias')} className="back-button">
             ← Volver
           </button>
-          <h2>🏷️ Crear Nueva Categoría</h2>
-          <p className="subtitle">Agrega una nueva categoría al sistema</p>
+          <h2>📁 Crear Categoría</h2>
+          <p className="subtitle">Añade una nueva categoría al sistema</p>
         </div>
 
         {error && (
@@ -93,69 +77,55 @@ function CrearCategoria() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="categoria-form">
-          <div className="form-group">
-            <label htmlFor="nombre">
-              Nombre de la Categoría <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              id="nombre"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChange}
-              placeholder="Ej: Panadería, Cerámica, etc."
-              className={fieldErrors.nombre ? 'error' : ''}
-              required
-            />
-            {fieldErrors.nombre && (
-              <span className="field-error">{fieldErrors.nombre}</span>
-            )}
+        <form onSubmit={handleSubmit} className="producto-form">
+
+          <div className="form-section">
+            <h3 className="section-title">📋 Información Básica</h3>
+
+            {/* Nombre */}
+            <div className="form-group">
+              <label htmlFor="nombre">Nombre *</label>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
+                className={fieldErrors.nombre ? 'error' : ''}
+              />
+              {fieldErrors.nombre && <span className="field-error">{fieldErrors.nombre}</span>}
+            </div>
+
+            {/* Tipo */}
+            <div className="form-group">
+              <label htmlFor="tipo">Tipo *</label>
+              <select
+                id="tipo"
+                name="tipo"
+                value={formData.tipo}
+                onChange={handleChange}
+                className={fieldErrors.tipo ? 'error' : ''}
+              >
+                <option value="">Selecciona tipo</option>
+                <option value="gastronomica">Gastronómica</option>
+                <option value="artesanal">Artesanal</option>
+              </select>
+              {fieldErrors.tipo && <span className="field-error">{fieldErrors.tipo}</span>}
+            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="tipo">
-              Tipo de Categoría <span className="required">*</span>
-            </label>
-            <select
-              id="tipo"
-              name="tipo"
-              value={formData.tipo}
-              onChange={handleChange}
-              className={fieldErrors.tipo ? 'error' : ''}
-              required
-            >
-              <option value="">Selecciona un tipo</option>
-              <option value="gastronomica">🍽️ Gastronómica</option>
-              <option value="artesanal">🎨 Artesanal</option>
-            </select>
-            {fieldErrors.tipo && (
-              <span className="field-error">{fieldErrors.tipo}</span>
-            )}
-          </div>
-
+          {/* Acciones */}
           <div className="form-actions">
-            <button 
-              type="button" 
-              onClick={() => navigate('/productos')}
+            <button
+              type="button"
               className="btn btn-secondary"
-              disabled={loading}
+              onClick={() => navigate('/categorias')}
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="btn btn-primary"
-            >
-              {loading ? (
-                <>
-                  <span className="spinner"></span>
-                  Creando...
-                </>
-              ) : (
-                '✓ Crear Categoría'
-              )}
+
+            <button type="submit" disabled={loading} className="btn btn-primary">
+              {loading ? 'Guardando...' : 'Crear Categoría'}
             </button>
           </div>
         </form>

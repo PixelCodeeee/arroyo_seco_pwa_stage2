@@ -18,17 +18,49 @@ function CrearOferente() {
   });
   
   const [usuarios, setUsuarios] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [isOferente, setIsOferente] = useState(false);
 
   const diasSemana = [
     'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'
   ];
 
   useEffect(() => {
-    fetchUsuarios();
+    initializeComponent();
   }, []);
+
+  const initializeComponent = async () => {
+    try {
+      // Get current user info from localStorage
+      const userData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      if (userData) {
+        setCurrentUser(userData);
+        
+        // If user is oferente, auto-select their own user
+        if (userData.rol === 'oferente') {
+          setIsOferente(true);
+          setFormData(prev => ({
+            ...prev,
+            id_usuario: userData.id_usuario.toString()
+          }));
+          // Only show this specific user in the dropdown
+          setUsuarios([userData]);
+        } else {
+          // If admin or other role, fetch all oferente users
+          await fetchUsuarios();
+        }
+      } else {
+        // No user data, fetch all
+        await fetchUsuarios();
+      }
+    } catch (err) {
+      console.error('Error initializing component:', err);
+      setError('Error al cargar información del usuario');
+    }
+  };
 
   const fetchUsuarios = async () => {
     try {
@@ -176,6 +208,7 @@ function CrearOferente() {
                 value={formData.id_usuario}
                 onChange={handleChange}
                 className={fieldErrors.id_usuario ? 'error' : ''}
+                disabled={isOferente}
                 required
               >
                 <option value="">Selecciona un usuario</option>
@@ -187,6 +220,11 @@ function CrearOferente() {
               </select>
               {fieldErrors.id_usuario && (
                 <span className="field-error">{fieldErrors.id_usuario}</span>
+              )}
+              {isOferente && (
+                <small className="field-hint">
+                  ℹ️ Como oferente, estás registrando tu propio negocio
+                </small>
               )}
             </div>
           </div>
