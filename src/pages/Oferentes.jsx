@@ -27,9 +27,7 @@ function Oferentes() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este oferente?')) {
-      return;
-    }
+    if (!window.confirm('¿Estás seguro de eliminar este oferente?')) return;
 
     try {
       await oferentesAPI.delete(id);
@@ -110,7 +108,7 @@ function Oferentes() {
                 <th>Propietario</th>
                 <th>Correo</th>
                 <th>Tipo</th>
-                <th>Dirección</th>
+                <th>Info</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -126,7 +124,28 @@ function Oferentes() {
                       {oferente.tipo}
                     </span>
                   </td>
-                  <td>{oferente.direccion || 'N/A'}</td>
+
+                  {/* AQUÍ VA LA COLUMNA CON DIRECCIÓN + HORARIO */}
+                  <td className="col-info">
+                    <div className="info-block">
+                      <strong className="info-label">Dirección</strong>
+                      <p className="info-text">
+                        {oferente.direccion || 'No especificada'}
+                      </p>
+                    </div>
+
+                    <div className="info-block">
+                      <strong className="info-label">Horario de Disponibilidad</strong>
+                      {oferente.horario_disponibilidad ? (
+                        <div className="horario-box">
+                          <pre>{oferente.horario_disponibilidad}</pre>
+                        </div>
+                      ) : (
+                        <span className="no-data">No definido</span>
+                      )}
+                    </div>
+                  </td>
+
                   <td className="actions">
                     <Link
                       to={`/oferentes/editar/${oferente.id_oferente}`}

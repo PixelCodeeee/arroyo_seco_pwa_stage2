@@ -11,6 +11,7 @@ function EditarOferente() {
     direccion: '',
     tipo: 'restaurante'
   });
+  const [horario, setHorario] = useState(''); // ← estado para el horario
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
@@ -23,11 +24,16 @@ function EditarOferente() {
     try {
       setFetching(true);
       const oferente = await oferentesAPI.getById(id);
+      
       setFormData({
         nombre_negocio: oferente.nombre_negocio,
         direccion: oferente.direccion || '',
         tipo: oferente.tipo
       });
+
+      // Aquí sí puedes usar oferente porque ya lo tienes
+      setHorario(oferente.horario_disponibilidad || '');
+      
     } catch (err) {
       setError(err.message || 'Error al cargar oferente');
     } finally {
@@ -49,7 +55,12 @@ function EditarOferente() {
     setLoading(true);
 
     try {
-      await oferentesAPI.update(id, formData);
+      // Enviar TODOS los datos, incluyendo el horario
+      await oferentesAPI.update(id, {
+        ...formData,
+        horario_disponibilidad: horario || null  // ← IMPORTANTE
+      });
+      
       alert('Oferente actualizado exitosamente');
       navigate('/oferentes');
     } catch (err) {
@@ -121,6 +132,25 @@ function EditarOferente() {
               placeholder="Calle, número, colonia, ciudad"
               rows="3"
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="horario_disponibilidad">Horario de Disponibilidad</label>
+            <textarea
+              id="horario_disponibilidad"
+              value={horario}
+              onChange={(e) => setHorario(e.target.value)}
+              placeholder='Lunes a Viernes: 09:00 - 18:00\nSábado: 10:00 - 23:00\nDomingo: Cerrado'
+              rows="5"
+              style={{ 
+                fontFamily: 'monospace', 
+                fontSize: '0.9rem',
+                resize: 'vertical'
+              }}
+            />
+            <small style={{ color: '#666', fontSize: '0.8rem', display: 'block', marginTop: '4px' }}>
+              Se guardará exactamente como lo escribas. Usa saltos de línea para mejor legibilidad.
+            </small>
           </div>
 
           <div className="form-actions">

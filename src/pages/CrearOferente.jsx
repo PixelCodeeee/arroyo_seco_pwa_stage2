@@ -11,6 +11,7 @@ function CrearOferente() {
     direccion: '',
     tipo: 'restaurante'
   });
+  const [horario, setHorario] = useState(''); // Estado para el horario
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,11 +23,11 @@ function CrearOferente() {
   const fetchUsuarios = async () => {
     try {
       const response = await usuariosAPI.getAll();
-      // Filter only users with role 'oferente'
       const oferentesUsers = response.usuarios.filter(u => u.rol === 'oferente');
       setUsuarios(oferentesUsers);
     } catch (err) {
       console.error('Error fetching users:', err);
+      setError('Error al cargar usuarios');
     }
   };
 
@@ -44,7 +45,15 @@ function CrearOferente() {
     setLoading(true);
 
     try {
-      await oferentesAPI.create(formData);
+      // Aquí creamos el objeto completo con el horario
+      const dataToSend = {
+        ...formData,
+        horario_disponibilidad: horario || null  // Incluimos el horario
+      };
+
+      // UNA SOLA LLAMADA, con todos los datos
+      await oferentesAPI.create(dataToSend);
+
       alert('Oferente creado exitosamente');
       navigate('/oferentes');
     } catch (err) {
@@ -124,6 +133,25 @@ function CrearOferente() {
               placeholder="Calle, número, colonia, ciudad"
               rows="3"
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="horario_disponibilidad">Horario de Disponibilidad</label>
+            <textarea
+              id="horario_disponibilidad"
+              value={horario}
+              onChange={(e) => setHorario(e.target.value)}
+              placeholder={`Lunes a Viernes: 09:00 - 18:00\nSábado: 10:00 - 23:00\nDomingo: Cerrado`}
+              rows="5"
+              style={{ 
+                fontFamily: 'monospace', 
+                fontSize: '0.9rem',
+                resize: 'vertical'
+              }}
+            />
+            <small style={{ color: '#666', fontSize: '0.8rem', display: 'block', marginTop: '4px' }}>
+              Escribe el horario como texto libre. Se mostrará exactamente así en la lista.
+            </small>
           </div>
 
           <div className="form-actions">

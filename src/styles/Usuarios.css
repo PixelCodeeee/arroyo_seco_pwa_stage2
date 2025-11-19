@@ -375,3 +375,56 @@
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 }
+.col-info {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  padding: 12px 8px !important;
+}
+
+.info-block {
+  margin-bottom: 14px;
+}
+
+.info-label {
+  display: block;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.info-text {
+  margin: 0;
+  padding: 8px 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+.horario-box {
+  background: #eef7ff;
+  border: 1px solid #b3e0ff;
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 100px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: #1a5276;
+}
+
+.horario-box pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.no-data {
+  color: #95a5a6;
+  font-style: italic;
+  font-size: 0.9rem;
+}
