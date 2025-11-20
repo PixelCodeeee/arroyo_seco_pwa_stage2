@@ -91,7 +91,7 @@ const Carrito = () => {
     
     // Redirect to orders page after 2 seconds
     setTimeout(() => {
-      navigate('/mis-ordenes');
+      navigate('/');
     }, 2000);
   };
 
@@ -124,7 +124,7 @@ const Carrito = () => {
               <div className="success-icon">✓</div>
               <h2>¡Pago Exitoso!</h2>
               <p>Tu pedido ha sido procesado correctamente.</p>
-              <p>Redirigiendo a tus órdenes...</p>
+              <p>Redirigiendo a inicio...</p>
             </div>
           </div>
         </div>

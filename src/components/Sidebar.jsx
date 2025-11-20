@@ -25,13 +25,6 @@ function Sidebar({ isCollapsed, onToggle, isOpen, onMobileToggle }) {
   // Menu items configuration
   const menuItems = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: '📊',
-      path: '/dashboard',
-      roles: ['admin', 'oferente']
-    },
-    {
       id: 'oferentes',
       label: isOferente ? 'Mi Perfil' : 'Oferentes',
       icon: '🏪',
@@ -53,10 +46,24 @@ function Sidebar({ isCollapsed, onToggle, isOpen, onMobileToggle }) {
       roles: ['admin', 'oferente']
     },
     {
+      id: 'categorias',
+      label: 'Categorías',
+      icon: '🏷️',
+      path: '/categorias',
+      roles: ['oferente', 'admin']
+    },
+    {
       id: 'ordenes',
       label: 'Órdenes',
       icon: '📋',
       path: '/ordenes',
+      roles: ['admin', 'oferente']
+    },
+    {
+      id: 'reservas',
+      label: 'Reservas',
+      icon: '📅',
+      path: '/reservas',
       roles: ['admin', 'oferente']
     },
     {
@@ -84,13 +91,6 @@ function Sidebar({ isCollapsed, onToggle, isOpen, onMobileToggle }) {
       type: 'divider',
       roles: ['admin', 'oferente']
     },
-    {
-      id: 'configuracion',
-      label: 'Configuración',
-      icon: '⚙️',
-      path: '/configuracion',
-      roles: ['admin', 'oferente']
-    }
   ];
 
   // Filter menu items based on user role
@@ -104,8 +104,7 @@ function Sidebar({ isCollapsed, onToggle, isOpen, onMobileToggle }) {
       {/* Sidebar Header */}
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          {!isCollapsed && <span className="logo-text">Mi Plataforma</span>}
-          {isCollapsed && <span className="logo-icon">MP</span>}
+          {!isCollapsed && <span className="logo-text">Panel de control</span>}
         </div>
         <button 
           className="sidebar-toggle"

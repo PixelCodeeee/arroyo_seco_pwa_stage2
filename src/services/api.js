@@ -250,48 +250,175 @@ export const ordenesAPI = {
 };
 
 /* ======================================================
+   PEDIDOS API
+====================================================== */
+export const pedidosAPI = {
+  // Crear pedido manualmente (raramente usado, PayPal lo hace automáticamente)
+  create: (pedidoData) =>
+    apiRequest('/pedido', {
+      method: 'POST',
+      body: JSON.stringify(pedidoData),
+    }),
+
+  // Obtener todos los pedidos (admin)
+  getAll: () =>
+    apiRequest('/pedido', {
+      method: 'GET',
+    }),
+
+  // Obtener pedido por ID
+  getById: (id) =>
+    apiRequest(`/pedido/${id}`, {
+      method: 'GET',
+    }),
+
+  // Obtener mis pedidos (del usuario actual)
+  getMisPedidos: () => {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser) throw new Error('Usuario no autenticado');
+    
+    return apiRequest(`/pedido/usuario/${currentUser.id_usuario}`, {
+      method: 'GET',
+    });
+  },
+
+  // Obtener pedidos por usuario
+  getByUsuarioId: (usuarioId) =>
+    apiRequest(`/pedidos/usuario/${usuarioId}`, {
+      method: 'GET',
+    }),
+
+  // Obtener pedidos por oferente (para ver ventas)
+  getByOferenteId: (oferenteId) =>
+    apiRequest(`/pedidos/oferente/${oferenteId}`, {
+      method: 'GET',
+    }),
+
+  // Obtener pedidos por estado
+  getByEstado: (estado) =>
+    apiRequest(`/pedidos/estado/${estado}`, {
+      method: 'GET',
+    }),
+
+  // Cambiar estado del pedido
+  updateEstado: (id, estado) =>
+    apiRequest(`/pedidos/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado }),
+    }),
+
+  // Eliminar pedido (solo pendientes)
+  delete: (id) =>
+    apiRequest(`/pedidos/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+/* ======================================================
    RESERVAS API
 ====================================================== */
 export const reservasAPI = {
+  // Crear nueva reserva
   create: (reservaData) =>
     apiRequest('/reservas', {
       method: 'POST',
       body: JSON.stringify(reservaData),
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
     }),
 
-  getMisReservas: () =>
-    apiRequest('/reservas/mis-reservas', {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
+  // Obtener todas las reservas (admin)
+  getAll: () =>
+    apiRequest('/reservas', {
+      method: 'GET',
     }),
 
+  // Obtener reserva por ID
   getById: (id) =>
     apiRequest(`/reservas/${id}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
+      method: 'GET',
     }),
 
-  updateEstado: (id, estado, notas = '') =>
+  // Obtener reservas por usuario
+  getByUsuarioId: (usuarioId) =>
+    apiRequest(`/reservas/usuario/${usuarioId}`, {
+      method: 'GET',
+    }),
+
+  // Obtener mis reservas (usando el usuario actual del localStorage)
+  getMisReservas: () => {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser) throw new Error('Usuario no autenticado');
+    
+    return apiRequest(`/reservas/usuario/${currentUser.id_usuario}`, {
+      method: 'GET',
+    });
+  },
+
+  // Obtener reservas por servicio
+  getByServicioId: (servicioId) =>
+    apiRequest(`/reservas/servicio/${servicioId}`, {
+      method: 'GET',
+    }),
+
+  // Obtener reservas por oferente
+  getByOferenteId: (oferenteId) =>
+    apiRequest(`/reservas/oferente/${oferenteId}`, {
+      method: 'GET',
+    }),
+
+  // Obtener reservas por estado
+  getByEstado: (estado) =>
+    apiRequest(`/reservas/estado/${estado}`, {
+      method: 'GET',
+    }),
+
+  // Actualizar reserva completa
+  update: (id, reservaData) =>
+    apiRequest(`/reservas/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(reservaData),
+    }),
+
+  // Cambiar solo el estado de una reserva
+  updateEstado: (id, estado) =>
     apiRequest(`/reservas/${id}/estado`, {
       method: 'PATCH',
-      body: JSON.stringify({ estado, notas }),
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
+      body: JSON.stringify({ estado }),
     }),
 
+  // Verificar disponibilidad antes de reservar
+  checkDisponibilidad: (id_servicio, fecha, hora) => {
+    const params = new URLSearchParams({ id_servicio, fecha, hora });
+    return apiRequest(`/reservas/check/disponibilidad?${params.toString()}`, {
+      method: 'GET',
+    });
+  },
+
+  // Eliminar reserva
   delete: (id) =>
     apiRequest(`/reservas/${id}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
     }),
+
+  // Cancelar reserva (con validación de 24h)
+  cancelar: async (id) => {
+    // Primero obtener la reserva para validar
+    const reserva = await apiRequest(`/reservas/${id}`, { method: 'GET' });
+    
+    // Validar que falten al menos 24h
+    const fechaReserva = new Date(`${reserva.fecha}T${reserva.hora}`);
+    const ahora = new Date();
+    const horasRestantes = (fechaReserva - ahora) / (1000 * 60 * 60);
+    
+    if (horasRestantes < 24) {
+      throw new Error('No se puede cancelar con menos de 24 horas de anticipación');
+    }
+    
+    // Si pasa la validación, cancelar
+    return apiRequest(`/reservas/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado: 'cancelada' }),
+    });
+  },
 };
 
 /* ======================================================

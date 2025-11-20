@@ -5,6 +5,7 @@ import { oferentesAPI, productosAPI } from "../services/api";
 import { addToCart, replaceCartWithNewOferente, isProductInCart, getProductQuantity } from "../utils/cartUtils";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import GoogleMapComponent from "../components/GoogleMap";
 import ReservaModal from "../components/ReservaModal";
 import CartConfirmModal from "../components/CartConfirmModal";
 import "../styles/OferenteDetail.css";
@@ -316,7 +317,7 @@ function OferenteDetail() {
         </section>
       )}
 
-      {/* Details Section */}
+      {/* Restaurant Details and Map Section */}
       <section className="restaurant-details-section">
         <div className="details-info">
           <h3>{getTipoTexto()}</h3>
@@ -353,8 +354,12 @@ function OferenteDetail() {
           )}
         </div>
         
+        {/* Map Container - FIXED: removed inline style that was conflicting */}
         <div className="map-container">
-          <img src="/images/map.png" alt="Ubicación" />
+          <GoogleMapComponent 
+            ubicacion={oferente.ubicacion || oferente.direccion || "Ciudad de México"}
+            nombreNegocio={oferente.nombre_negocio}
+          />
         </div>
       </section>
 

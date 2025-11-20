@@ -24,6 +24,9 @@ import ErrorPage from './pages/ErrorPage';
 import RequireRole from "./components/RequireRole";
 import MiPerfil from "./pages/MiPerfil";
 import Categorias from './pages/Categorias';
+import Ordenes from './pages/Ordenes';
+import Reservas from './pages/Reservas';
+
 
 function App() {
   const initialOptions = {
@@ -35,7 +38,14 @@ function App() {
   return (
     <PayPalScriptProvider options={initialOptions}>
       <Router>
+
+
         <Routes>
+
+          <Route path="/reservas" element={<Reservas />} />
+
+          <Route path="/ordenes" element={<Ordenes />} />
+
 
           <Route path="/categorias" element={<Categorias />} />
           
