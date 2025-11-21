@@ -18,7 +18,7 @@ function Catalogo() {
   // Hero slides con imágenes diferentes
   const heroSlides = [
     { id: 1, image: "/images/tesoro.jpg", alt: "Arroyo Seco" },
-    { id: 2, image: "/images/taco.png", alt: "Gastronomía Local" }
+    { id: 2, image: "/images/comida.jpg", alt: "Gastronomía Local" }
   ];
 
   useEffect(() => {
@@ -169,14 +169,12 @@ function Catalogo() {
   return (
     <div className="Catalogo-page">
       <Navbar />
-      <div style={{ height: '80px', width: '100%' }}></div>
-
       {/* Hero Section - Selección Semanal */}
       <section className="Catalogo-hero">
         <div className="hero-container">
           <div className="hero-text">
             <h1>Nuestra selección Semanal</h1>
-            <p>
+            <p className="hero-subtitle">
               Descubre lo mejor de Arroyo Seco. Desde deliciosa gastronomía local hasta 
               artesanías únicas hechas a mano. Explora nuestros negocios destacados y 
               encuentra experiencias auténticas que celebran nuestra cultura y tradición.
@@ -184,7 +182,7 @@ function Catalogo() {
           </div>
           
           <div className="hero-carousel-wrapper">
-            <div className="hero-carousel">
+            <div className="hero-carousel modern">
               {heroSlides.length > 1 && (
                 <button className="hero-carousel-btn prev" onClick={handlePrevSlide}>
                   <ChevronLeft size={28} />
@@ -316,7 +314,7 @@ function Catalogo() {
                   )}
                 </div>
                 
-                <div className="cards-grid">
+                <div className="cards-grid modern">
                   {(showingAll ? restaurantes.slice(0, 4) : restaurantes).map(renderOferenteCard)}
                 </div>
               </div>
@@ -339,7 +337,7 @@ function Catalogo() {
                   )}
                 </div>
                 
-                <div className="cards-grid">
+                <div className="cards-grid modern">
                   {(showingAll ? artesanias.slice(0, 4) : artesanias).map(renderOferenteCard)}
                 </div>
               </div>

@@ -24,7 +24,7 @@ body {
   background-image: url("/images/pattern.svg");
   background-repeat: repeat-y;
   background-position: center;
-  background-size: 80px;
+  background-size: 120px!important;
   padding: 2rem;
 }
 

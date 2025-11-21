@@ -18,7 +18,6 @@ function CrearOferente() {
   });
   
   const [usuarios, setUsuarios] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -37,8 +36,6 @@ function CrearOferente() {
       // Get current user info from localStorage
       const userData = JSON.parse(localStorage.getItem('currentUser') || 'null');
       if (userData) {
-        setCurrentUser(userData);
-        
         // If user is oferente, auto-select their own user
         if (userData.rol === 'oferente') {
           setIsOferente(true);
