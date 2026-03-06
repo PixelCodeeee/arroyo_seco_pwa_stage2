@@ -99,6 +99,13 @@ function Sidebar({ isCollapsed, onToggle, isOpen, onMobileToggle }) {
       type: 'divider',
       roles: ['admin', 'oferente']
     },
+    {
+  id: 'anuncios',
+  label: 'Anuncios',
+  icon: '📢',
+  path: '/anuncios',
+  roles: ['admin', 'oferente']
+},
   ];
 
   // Filter menu items based on user role

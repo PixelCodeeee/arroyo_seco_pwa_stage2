@@ -27,6 +27,12 @@ import Categorias from './pages/Categorias';
 import Ordenes from './pages/Ordenes';
 import Reservas from './pages/Reservas';
 import Contact from './pages/Contacto';
+import Anuncios from './pages/Anuncios';
+import AnunciosPublicos from './pages/AnunciosPublicos';
+
+import CrearAnuncio from './pages/CrearAnuncio';
+import EditarAnuncio from './pages/EditarAnuncio';
+
 
 function App() {
   const initialOptions = {
@@ -171,6 +177,31 @@ function App() {
               </RequireRole>
             }
           />
+          {/* Anuncios  */}
+<Route
+  path="/anuncios"
+  element={
+    <RequireRole allowed={["admin","oferente"]}>
+      <Anuncios />
+    </RequireRole>
+  }
+/>
+<Route
+  path="/anuncios/crear"
+  element={
+    <RequireRole allowed={["admin","oferente"]}>
+      <CrearAnuncio />
+    </RequireRole>
+  }
+/>
+<Route
+  path="/anuncios/editar/:id"
+  element={
+    <RequireRole allowed={["admin","oferente"]}>
+      <EditarAnuncio />
+    </RequireRole>
+  }
+/>
 
           <Route
             path="/panel-admin"
@@ -180,6 +211,8 @@ function App() {
               </RequireRole>
             }
           />
+          {/* Anuncios públicos - todos pueden ver */}
+<Route path="/anuncios-publicos" element={<AnunciosPublicos />} />
           
           <Route path="/oferente/:id" element={<OferenteDetail />} />
           <Route path="/carrito" element={<Carrito />} />

@@ -538,5 +538,41 @@ export const paypalAPI = {
   getOrderDetails: (orderID) =>
     apiRequest(`/paypal/orders/${orderID}`),
 };
+/* ======================================================
+   ANNOUNCEMENTS API
+====================================================== */
+export const announcementsAPI = {
+  getAll: () =>
+    apiRequest('/announcements'),
+
+  getById: (id) =>
+    apiRequest(`/announcements/${id}`),
+
+  create: (data) =>
+    apiRequest('/announcements', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
+
+  update: (id, data) =>
+    apiRequest(`/announcements/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
+
+  delete: (id) =>
+    apiRequest(`/announcements/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
+};
 
 export default usuariosAPI;
