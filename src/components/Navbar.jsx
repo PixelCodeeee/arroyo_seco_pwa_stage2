@@ -88,7 +88,7 @@ function Navbar() {
 
         {user?.rol === "admin" && (
           <Link
-            to="/panel-admin"
+            to="/analiticas"
             className={`nav-role-btn ${isActive("/panel-admin") ? "active" : ""}`}
           >
             Panel Admin

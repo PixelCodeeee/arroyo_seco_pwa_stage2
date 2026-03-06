@@ -28,6 +28,7 @@ import Ordenes from "./pages/Ordenes";
 import Reservas from "./pages/Reservas";
 import Contact from "./pages/Contacto";
 import Recomendaciones from "./pages/Recomendaciones";
+import Analiticas from "./pages/Analiticas";
 
 function App() {
   const initialOptions = {
@@ -49,6 +50,15 @@ function App() {
           <Route path="/recomendaciones" element={<Recomendaciones />} />
 
           <Route path="/categorias" element={<Categorias />} />
+
+          <Route
+            path="/analiticas"
+            element={
+              <RequireRole allowed={["admin", "oferente"]}>
+                <Analiticas />
+              </RequireRole>
+            }
+          />
 
           {/* Perfil: cualquier usuario */}
           <Route
