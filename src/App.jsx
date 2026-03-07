@@ -1,32 +1,34 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Usuarios from './pages/Usuarios';
-import EditarUsuario from './pages/EditarUsuario';
-import Oferentes from './pages/Oferentes';
-import CrearOferente from './pages/CrearOferente';
-import EditarOferente from './pages/EditarOferente';
-import Servicios from './pages/Servicios';
-import CrearServicio from './pages/CrearServicio';
-import EditarServicio from './pages/EditarServicio';
-import Catalogo from './pages/Catalogo';
-import Carrito from './pages/Carrito';
-import Productos from './pages/Productos';
-import CrearProducto from './pages/CrearProducto';
-import EditarProducto from './pages/EditarProducto';
-import CrearCategoria from './pages/CrearCategoria';
-import EditarCategoria from './pages/EditarCategoria';
-import OferenteDetail from './pages/OferenteDetail';
-import ErrorPage from './pages/ErrorPage';
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Usuarios from "./pages/Usuarios";
+import EditarUsuario from "./pages/EditarUsuario";
+import Oferentes from "./pages/Oferentes";
+import CrearOferente from "./pages/CrearOferente";
+import EditarOferente from "./pages/EditarOferente";
+import Servicios from "./pages/Servicios";
+import CrearServicio from "./pages/CrearServicio";
+import EditarServicio from "./pages/EditarServicio";
+import Catalogo from "./pages/Catalogo";
+import Carrito from "./pages/Carrito";
+import Productos from "./pages/Productos";
+import CrearProducto from "./pages/CrearProducto";
+import EditarProducto from "./pages/EditarProducto";
+import CrearCategoria from "./pages/CrearCategoria";
+import EditarCategoria from "./pages/EditarCategoria";
+import OferenteDetail from "./pages/OferenteDetail";
+import ErrorPage from "./pages/ErrorPage";
 import RequireRole from "./components/RequireRole";
 import MiPerfil from "./pages/MiPerfil";
-import Categorias from './pages/Categorias';
-import Ordenes from './pages/Ordenes';
-import Reservas from './pages/Reservas';
-import Contact from './pages/Contacto';
+import Categorias from "./pages/Categorias";
+import Ordenes from "./pages/Ordenes";
+import Reservas from "./pages/Reservas";
+import Contact from "./pages/Contacto";
+import Recomendaciones from "./pages/Recomendaciones";
+import Analiticas from "./pages/Analiticas";
 
 function App() {
   const initialOptions = {
@@ -38,19 +40,26 @@ function App() {
   return (
     <PayPalScriptProvider options={initialOptions}>
       <Router>
-
-
         <Routes>
-          
           <Route path="/contacto" element={<Contact />} />
 
           <Route path="/reservas" element={<Reservas />} />
 
           <Route path="/ordenes" element={<Ordenes />} />
 
+          <Route path="/recomendaciones" element={<Recomendaciones />} />
 
           <Route path="/categorias" element={<Categorias />} />
-          
+
+          <Route
+            path="/analiticas"
+            element={
+              <RequireRole allowed={["admin", "oferente"]}>
+                <Analiticas />
+              </RequireRole>
+            }
+          />
+
           {/* Perfil: cualquier usuario */}
           <Route
             path="/perfil"
@@ -157,11 +166,11 @@ function App() {
 
           {/* Público */}
           <Route path="/catalogo" element={<Catalogo />} />
-          
+
           {/* Rutas de categorías */}
           <Route path="/gastronomia" element={<Catalogo />} />
           <Route path="/artesanias" element={<Catalogo />} />
-          
+
           {/* Panel oferente */}
           <Route
             path="/panel-oferente"
@@ -180,10 +189,9 @@ function App() {
               </RequireRole>
             }
           />
-          
+
           <Route path="/oferente/:id" element={<OferenteDetail />} />
           <Route path="/carrito" element={<Carrito />} />
-
         </Routes>
       </Router>
     </PayPalScriptProvider>

@@ -47,38 +47,39 @@ function Navbar() {
     <header className="navbar">
       <nav className="nav-links">
         {/* ← NUEVO: Enlace a Home */}
-        <Link 
-          to="/" 
-          className={isActive("/") ? "active" : ""}
-        >
+        <Link to="/" className={isActive("/") ? "active" : ""}>
           Inicio
         </Link>
 
-        <Link 
-          to="/gastronomia" 
+        <Link
+          to="/gastronomia"
           className={isActive("/gastronomia") ? "active" : ""}
         >
           Gastronomía
         </Link>
 
-        <Link 
-          to="/artesanias" 
+        <Link
+          to="/artesanias"
           className={isActive("/artesanias") ? "active" : ""}
         >
           Artesanías
         </Link>
 
-        <Link 
-          to="/contacto" 
-          className={isActive("/contacto") ? "active" : ""}
+        <Link
+          to="/recomendaciones"
+          className={isActive("/recomendaciones") ? "active" : ""}
         >
+          Recomendaciones
+        </Link>
+
+        <Link to="/contacto" className={isActive("/contacto") ? "active" : ""}>
           Contacto
         </Link>
 
         {/* Paneles condicionales con active */}
         {user?.rol === "oferente" && (
-          <Link 
-            to="/panel-oferente" 
+          <Link
+            to="/panel-oferente"
             className={`nav-role-btn ${isActive("/panel-oferente") ? "active" : ""}`}
           >
             Panel Oferente
@@ -86,8 +87,8 @@ function Navbar() {
         )}
 
         {user?.rol === "admin" && (
-          <Link 
-            to="/panel-admin" 
+          <Link
+            to="/analiticas"
             className={`nav-role-btn ${isActive("/panel-admin") ? "active" : ""}`}
           >
             Panel Admin
@@ -107,8 +108,8 @@ function Navbar() {
 
         {user ? (
           <>
-            <Link 
-              to="/perfil" 
+            <Link
+              to="/perfil"
               className={`perfil-link ${isActive("/perfil") ? "active" : ""}`}
             >
               Mi Perfil
@@ -120,14 +121,14 @@ function Navbar() {
           </>
         ) : (
           <>
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               className={`perfil-link ${isActive("/login") ? "active" : ""}`}
             >
               Iniciar sesión
             </Link>
-            <Link 
-              to="/register" 
+            <Link
+              to="/register"
               className={`perfil-link ${isActive("/register") ? "active" : ""}`}
             >
               Regístrate
