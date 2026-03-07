@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/Navbar.css";
@@ -21,7 +20,7 @@ function Navbar() {
     window.addEventListener("cartUpdated", handleCartUpdate);
 
     return () => window.removeEventListener("cartUpdated", handleCartUpdate);
-  }, []);
+  }, [location]); // Re-run check on route change to keep user state fresh
 
   const updateCartCount = () => {
     const cartItems = JSON.parse(sessionStorage.getItem("cartItems") || "[]");
@@ -45,34 +44,26 @@ function Navbar() {
   return (
     <header className="navbar">
       <nav className="nav-links">
-        {/* ← NUEVO: Enlace a Home */}
         <Link to="/" className={isActive("/") ? "active" : ""}>
           Inicio
         </Link>
 
+        {/* Fixed: Added missing </Link> */}
         <Link to="/anuncios-publicos" className={isActive("/anuncios-publicos") ? "active" : ""}>
           Eventos
+        </Link>
 
-        <Link
-          to="/gastronomia"
-          className={isActive("/gastronomia") ? "active" : ""}
-        >
+        <Link to="/gastronomia" className={isActive("/gastronomia") ? "active" : ""}>
           Gastronomía
         </Link>
 
-        <Link
-          to="/artesanias"
-          className={isActive("/artesanias") ? "active" : ""}
-        >
+        <Link to="/artesanias" className={isActive("/artesanias") ? "active" : ""}>
           Artesanías
         </Link>
 
-        <Link
-          to="/recomendaciones"
-          className={isActive("/recomendaciones") ? "active" : ""}
-        >
+        {/* Fixed: Added missing </Link> */}
+        <Link to="/recomendaciones" className={isActive("/recomendaciones") ? "active" : ""}>
           Recomendaciones
-
         </Link>
 
         <Link to="/contacto" className={isActive("/contacto") ? "active" : ""}>
@@ -86,11 +77,8 @@ function Navbar() {
         )}
 
         {user?.rol === "admin" && (
+          /* Fixed: Removed nested/duplicate Link logic here */
           <Link to="/panel-admin" className={`nav-role-btn ${isActive("/panel-admin") ? "active" : ""}`}>
-          <Link
-            to="/analiticas"
-            className={`nav-role-btn ${isActive("/panel-admin") ? "active" : ""}`}
-          >
             Panel Admin
           </Link>
         )}
@@ -103,29 +91,23 @@ function Navbar() {
         </button>
 
         {user ? (
-          <>
+          <div className="user-controls">
             <Link to="/perfil" className={`perfil-link ${isActive("/perfil") ? "active" : ""}`}>
               Mi Perfil
             </Link>
             <button onClick={handleLogout} className="logout-btn">
               Cerrar sesión
             </button>
-          </>
+          </div>
         ) : (
-          <>
-            <Link
-              to="/login"
-              className={`perfil-link ${isActive("/login") ? "active" : ""}`}
-            >
+          <div className="auth-links">
+            <Link to="/login" className={`perfil-link ${isActive("/login") ? "active" : ""}`}>
               Iniciar sesión
             </Link>
-            <Link
-              to="/register"
-              className={`perfil-link ${isActive("/register") ? "active" : ""}`}
-            >
+            <Link to="/register" className={`perfil-link ${isActive("/register") ? "active" : ""}`}>
               Regístrate
             </Link>
-          </>
+          </div>
         )}
       </div>
     </header>
